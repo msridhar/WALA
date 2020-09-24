@@ -77,9 +77,9 @@ public class TestFlowGraphJSON {
                 DefaultSourceExtractor::new)
             .getFlowGraph();
     String json = fg.toJSON();
+    System.err.println(json);
     // Strip out character offsets, as they differ on Windows and make it hard to write assertions.
     json = json.replaceAll(":[0-9]+-[0-9]+", "");
-    // System.err.println(json);
     Gson gson = new Gson();
     Type mapType = new TypeToken<Map<String, String[]>>() {}.getType();
     return gson.fromJson(json, mapType);

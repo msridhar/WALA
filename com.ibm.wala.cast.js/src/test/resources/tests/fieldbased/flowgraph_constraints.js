@@ -25,3 +25,13 @@ function voidFun() {
 }
 
 voidFun();
+
+// lexical variables
+(function () {
+  function main(){
+    var x = function() { return 2; }
+    var y = function() { return x();}// interesting call site
+    y();
+  }
+  main();
+})();
