@@ -43,7 +43,7 @@ public interface CAstSourcePositionMap {
      */
     default String prettyPrint() {
       String file = getURL().getFile();
-      //file = file.substring(file.lastIndexOf('/') + 1);
+      // file = file.substring(file.lastIndexOf('/') + 1);
 
       int line = getFirstLine(), start_offset = getFirstOffset(), end_offset = getLastOffset();
       return file + '@' + line + ':' + start_offset + '-' + end_offset;
