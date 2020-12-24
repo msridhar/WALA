@@ -35,3 +35,10 @@ voidFun();
   }
   main();
 })();
+
+function functionPrototypeCallApply() {
+  function nested() {}
+  var x = nested;
+  var res1 = x.call(null, nested);
+  var res2 = x.apply(null, [nested]);
+}
