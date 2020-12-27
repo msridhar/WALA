@@ -64,6 +64,7 @@ subprojects { subproject ->
 		maven {
 			url 'https://storage.googleapis.com/r8-releases/raw'
 		}
+		mavenLocal()
 	}
 
 	configurations {
