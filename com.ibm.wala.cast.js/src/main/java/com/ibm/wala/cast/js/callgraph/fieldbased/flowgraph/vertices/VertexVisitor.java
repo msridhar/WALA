@@ -36,4 +36,6 @@ public interface VertexVisitor<T> {
   public abstract T visitPrototypeVertex(PrototypeFieldVertex protoVertex);
 
   public abstract T visitReflectiveCallVertex(ReflectiveCallVertex reflectiveCallVertex);
+
+  public abstract T visitDynFuncVertex(DynFuncVertex dynFuncVertex);
 }

@@ -84,4 +84,9 @@ public class AbstractVertexVisitor<T> implements VertexVisitor<T> {
   public T visitReflectiveCallVertex(ReflectiveCallVertex reflectiveCallVertex) {
     return visitVertex();
   }
+
+  @Override
+  public T visitDynFuncVertex(DynFuncVertex dynFuncVertex) {
+    return visitVertex();
+  }
 }

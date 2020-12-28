@@ -19,6 +19,7 @@ import com.ibm.wala.cast.ir.ssa.AstPropertyRead;
 import com.ibm.wala.cast.ir.ssa.AstPropertyWrite;
 import com.ibm.wala.cast.js.callgraph.fieldbased.JSMethodInstructionVisitor;
 import com.ibm.wala.cast.js.callgraph.fieldbased.flowgraph.vertices.CreationSiteVertex;
+import com.ibm.wala.cast.js.callgraph.fieldbased.flowgraph.vertices.DynFuncVertex;
 import com.ibm.wala.cast.js.callgraph.fieldbased.flowgraph.vertices.FuncVertex;
 import com.ibm.wala.cast.js.callgraph.fieldbased.flowgraph.vertices.VarVertex;
 import com.ibm.wala.cast.js.callgraph.fieldbased.flowgraph.vertices.Vertex;
@@ -355,37 +356,49 @@ public class FlowGraphBuilder {
             factory.makeVarVertex(func, invk.getFunction()), factory.makeCallVertex(func, invk));
 
         if (isFunctionConstructorInvoke(invk)) {
-          // second parameter is function name
-          String fn_name = symtab.getStringValue(invk.getUse(1));
+          boolean funDeclOrExpr = false;
+          if (isConstructorInvokeForFunDeclOrExpr(invk)) {
+            // second parameter is function name
+            String fn_name = symtab.getStringValue(invk.getUse(1));
 
-          // find the function being defined here
-          IClass klass =
-              cha.lookupClass(TypeReference.findOrCreate(JavaScriptTypes.jsLoader, fn_name));
-          if (klass == null) {
-            System.err.println(
-                "cannot find "
-                    + fn_name
-                    + " at "
-                    + ((AstMethod) ir.getMethod())
-                        .getSourcePosition(
-                            ir.getCallInstructionIndices(invk.getCallSite()).intIterator().next()));
-            return;
+            // find the function being defined here
+            IClass klass =
+                cha.lookupClass(TypeReference.findOrCreate(JavaScriptTypes.jsLoader, fn_name));
+            //              System.err.println(
+            //                  "cannot find "
+            //                      + fn_name
+            //                      + " at "
+            //                      + ((AstMethod) ir.getMethod())
+            //                          .getSourcePosition(
+            //                              ir.getCallInstructionIndices(invk.getCallSite())
+            //                                  .intIterator()
+            //                                  .next()));
+            if (klass != null) {
+              funDeclOrExpr = true;
+              IMethod fn = klass.getMethod(AstMethodReference.fnSelector);
+              FuncVertex fnVertex = factory.makeFuncVertex(klass);
+
+              // function flows into its own v1 variable
+              flowgraph.addEdge(fnVertex, factory.makeVarVertex(fnVertex, 1));
+
+              // flow parameters into local variables
+              for (int i = 1; i < fn.getNumberOfParameters(); ++i)
+                flowgraph.addEdge(
+                    factory.makeParamVertex(fnVertex, i), factory.makeVarVertex(fnVertex, i + 1));
+
+              // flow function into result variable
+              flowgraph.addEdge(fnVertex, factory.makeVarVertex(func, invk.getDef()));
+            }
           }
+          if (!funDeclOrExpr) {
+            // This is some other usage of new Function.  Even though we cannot model the behavior
+            // of the function, we can still model the function object itself, to discover where it
+            // is invoked
+            DynFuncVertex dfVertex = factory.makeDynFuncVertex(method, invk.iIndex());
 
-          IMethod fn = klass.getMethod(AstMethodReference.fnSelector);
-          FuncVertex fnVertex = factory.makeFuncVertex(klass);
-
-          // function flows into its own v1 variable
-          flowgraph.addEdge(fnVertex, factory.makeVarVertex(fnVertex, 1));
-
-          // flow parameters into local variables
-          for (int i = 1; i < fn.getNumberOfParameters(); ++i)
-            flowgraph.addEdge(
-                factory.makeParamVertex(fnVertex, i), factory.makeVarVertex(fnVertex, i + 1));
-
-          // flow function into result variable
-          flowgraph.addEdge(fnVertex, factory.makeVarVertex(func, invk.getDef()));
-
+            // flow function into result variable
+            flowgraph.addEdge(dfVertex, factory.makeVarVertex(func, invk.getDef()));
+          }
         } else if (supportFullPointerAnalysis) {
 
           CreationSiteVertex cs =
@@ -399,7 +412,6 @@ public class FlowGraphBuilder {
             flowgraph.addEdge(cs, factory.makeVarVertex(func, invk.getUse(0)));
           }
         }
-
       } else {
         // check whether it is a method call
         if (invk.getDeclaredTarget().equals(JavaScriptMethods.dispatchReference)) {

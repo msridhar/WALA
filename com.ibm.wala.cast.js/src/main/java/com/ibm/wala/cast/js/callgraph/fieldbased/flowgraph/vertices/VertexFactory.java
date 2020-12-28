@@ -42,6 +42,7 @@ public class VertexFactory {
       HashMapFactory.make();
   private final Map<Pair<IMethod, Integer>, CreationSiteVertex> creationSites =
       HashMapFactory.make();
+  private final Map<Pair<IMethod, Integer>, DynFuncVertex> dynFuncSites = HashMapFactory.make();
 
   public CallVertex makeCallVertex(FuncVertex func, JavaScriptInvoke invk) {
     CallSiteReference site = invk.getCallSite();
@@ -71,6 +72,15 @@ public class VertexFactory {
     CreationSiteVertex value = creationSites.get(key);
     if (value == null) {
       creationSites.put(key, value = new CreationSiteVertex(method, instruction, createdType));
+    }
+    return value;
+  }
+
+  public DynFuncVertex makeDynFuncVertex(IMethod method, int iIndex) {
+    Pair<IMethod, Integer> key = Pair.make(method, iIndex);
+    DynFuncVertex value = dynFuncSites.get(key);
+    if (value == null) {
+      dynFuncSites.put(key, value = new DynFuncVertex(method, iIndex));
     }
     return value;
   }

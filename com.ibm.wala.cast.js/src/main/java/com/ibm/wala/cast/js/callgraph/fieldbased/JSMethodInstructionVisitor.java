@@ -42,6 +42,19 @@ public class JSMethodInstructionVisitor extends JSAbstractInstructionVisitor {
    *
    * <p>TODO: A bit hackish. Is there a more principled way to do this?
    */
+  protected boolean isConstructorInvokeForFunDeclOrExpr(JavaScriptInvoke invk) {
+    // this is not a perfect check; caller should ensure that the string argument is a well-known
+    // function name using WALA's function name syntax
+    return isFunctionConstructorInvoke(invk)
+        && invk.getNumberOfPositionalParameters() == 2
+        && symtab.isStringConstant(invk.getUse(1))
+        && !symtab.getStringValue(invk.getUse(1)).equals("");
+  }
+
+  /**
+   * Is {@code invk} an invocation of the Function constructor (either an explicit new Function call
+   * or WALA IR modeling of a function declaration / expression)?
+   */
   protected boolean isFunctionConstructorInvoke(JavaScriptInvoke invk) {
     /*
      * Function objects are allocated by explicit constructor invocations like this:
@@ -54,17 +67,7 @@ public class JSMethodInstructionVisitor extends JSAbstractInstructionVisitor {
       SSAInstruction fndef = du.getDef(fn);
       if (fndef instanceof AstGlobalRead) {
         AstGlobalRead agr = (AstGlobalRead) fndef;
-        if (agr.getGlobalName().equals("global Function")) {
-          if (invk.getNumberOfPositionalParameters() != 2) {
-            return false;
-          }
-          // this may be a genuine use of "new Function()", not a declaration/expression
-          if (!symtab.isStringConstant(invk.getUse(1))
-              || symtab.getStringValue(invk.getUse(1)).equals("")) {
-            return false;
-          }
-          return true;
-        }
+        return agr.getGlobalName().equals("global Function");
       }
     }
     return false;

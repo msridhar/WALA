@@ -91,7 +91,7 @@ public class PessimisticCallGraphBuilder extends FieldBasedCallGraphBuilder {
     @Override
     public void visitJavaScriptInvoke(JavaScriptInvoke invk) {
       // check whether this instruction corresponds to a function expression/declaration
-      if (isFunctionConstructorInvoke(invk)) {
+      if (isConstructorInvokeForFunDeclOrExpr(invk)) {
         int defn = invk.getDef();
 
         // the name of the function
@@ -137,7 +137,7 @@ public class PessimisticCallGraphBuilder extends FieldBasedCallGraphBuilder {
 
         // if it's not a local call, add flows from/to unknown
         if (!(def instanceof JavaScriptInvoke)
-            || !isFunctionConstructorInvoke((JavaScriptInvoke) def)) {
+            || !isConstructorInvokeForFunDeclOrExpr((JavaScriptInvoke) def)) {
           for (int i = 1; i < invk.getNumberOfPositionalParameters(); ++i)
             flowgraph.addEdge(
                 factory.makeVarVertex(caller, invk.getUse(i)), factory.makeUnknownVertex());
