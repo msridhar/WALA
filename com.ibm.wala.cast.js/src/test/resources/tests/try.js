@@ -79,6 +79,14 @@ function tryCatchTwice( x, targetOne, targetTwo ) {
   return e;
 }
 
+function tryFinallyReturn(x, targetOne) {
+  try {
+    return;
+  } finally {
+    targetOne(x);
+  }
+}
+
 o = {
  one: -12,
 
@@ -95,6 +103,7 @@ tryCatch(o, targetOne, targetTwo);
 tryFinally(o, targetOne, targetTwo);
 tryFinallyLoop(o, targetTwo);
 tryCatchFinally(o, targetOne, targetTwo);
+tryFinallyReturn(o, targetOne);
 (function testRet() {
   var e = tryCatchTwice(o, targetOne, targetTwo);
   e.two();

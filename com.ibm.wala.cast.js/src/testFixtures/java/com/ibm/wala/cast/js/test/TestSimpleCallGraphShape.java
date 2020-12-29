@@ -310,7 +310,8 @@ public abstract class TestSimpleCallGraphShape extends TestJSCallGraphShape {
           "try.js/tryCatchTwice",
           new String[] {"try.js/targetOne", "try.js/targetTwo", "try.js/three", "try.js/two"}
         },
-        new Object[] {"try.js/testRet", new String[] {"try.js/three", "try.js/two"}}
+        new Object[] {"try.js/testRet", new String[] {"try.js/three", "try.js/two"}},
+        new Object[] {"try.js/tryFinallyReturn", new String[] {"try.js/targetOne"}}
       };
 
   @Test
