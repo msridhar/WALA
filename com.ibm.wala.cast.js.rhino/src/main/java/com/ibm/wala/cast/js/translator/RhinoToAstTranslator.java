@@ -1695,18 +1695,20 @@ public class RhinoToAstTranslator implements TranslatorToCAst {
 
       if (node.getFinallyBlock() != null) {
         return Ast.makeNode(
-            CAstNode.BLOCK_STMT,
-            Ast.makeNode(CAstNode.TRY, tryCatch, unwindCatch),
-            visit(node.getFinallyBlock(), arg),
+            CAstNode.UNWIND,
             Ast.makeNode(
-                CAstNode.IF_STMT,
+                CAstNode.BLOCK_STMT,
+                Ast.makeNode(CAstNode.TRY, tryCatch, unwindCatch),
                 Ast.makeNode(
-                    CAstNode.BINARY_EXPR,
-                    CAstOperator.OP_NE,
-                    Ast.makeNode(CAstNode.VAR, Ast.makeConstant(unwindName)),
-                    readName(arg, null, "$$undefined")),
-                Ast.makeNode(
-                    CAstNode.THROW, Ast.makeNode(CAstNode.VAR, Ast.makeConstant(unwindName)))));
+                    CAstNode.IF_STMT,
+                    Ast.makeNode(
+                        CAstNode.BINARY_EXPR,
+                        CAstOperator.OP_NE,
+                        Ast.makeNode(CAstNode.VAR, Ast.makeConstant(unwindName)),
+                        readName(arg, null, "$$undefined")),
+                    Ast.makeNode(
+                        CAstNode.THROW, Ast.makeNode(CAstNode.VAR, Ast.makeConstant(unwindName))))),
+            visit(node.getFinallyBlock(), arg));
       } else {
         return tryCatch;
       }
