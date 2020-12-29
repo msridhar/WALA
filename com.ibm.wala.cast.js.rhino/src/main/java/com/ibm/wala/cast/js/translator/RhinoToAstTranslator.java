@@ -1616,42 +1616,42 @@ public class RhinoToAstTranslator implements TranslatorToCAst {
       String unwindName = null;
       CAstNode unwindCatch = null;
 
-      if (node.getFinallyBlock() != null) {
-        unwindName = "$$unwind" + tempVarNum++;
-        String unwindCatchName = "$$unwind" + tempVarNum++;
-        CAstNode var = Ast.makeConstant(unwindCatchName);
-
-        arg.addNameDecl(
-            noteSourcePosition(
-                arg,
-                Ast.makeNode(
-                    CAstNode.DECL_STMT,
-                    Ast.makeConstant(new CAstSymbolImpl(unwindCatchName, JSAstTranslator.Any)),
-                    readName(arg, null, "$$undefined")),
-                node));
-
-        arg.addNameDecl(
-            noteSourcePosition(
-                arg,
-                Ast.makeNode(
-                    CAstNode.DECL_STMT,
-                    Ast.makeConstant(new CAstSymbolImpl(unwindName, JSAstTranslator.Any)),
-                    readName(arg, null, "$$undefined")),
-                node));
-
-        unwindCatch =
-            Ast.makeNode(
-                CAstNode.CATCH,
-                var,
-                Ast.makeNode(
-                    CAstNode.ASSIGN,
-                    Ast.makeNode(CAstNode.VAR, Ast.makeConstant(unwindName)),
-                    Ast.makeNode(CAstNode.VAR, Ast.makeConstant(unwindCatchName))));
-
-        arg.cfg().map(unwindCatch, unwindCatch);
-
-        outer = new TryCatchContext(arg, unwindCatch);
-      }
+//      if (node.getFinallyBlock() != null) {
+//        unwindName = "$$unwind" + tempVarNum++;
+//        String unwindCatchName = "$$unwind" + tempVarNum++;
+//        CAstNode var = Ast.makeConstant(unwindCatchName);
+//
+//        arg.addNameDecl(
+//            noteSourcePosition(
+//                arg,
+//                Ast.makeNode(
+//                    CAstNode.DECL_STMT,
+//                    Ast.makeConstant(new CAstSymbolImpl(unwindCatchName, JSAstTranslator.Any)),
+//                    readName(arg, null, "$$undefined")),
+//                node));
+//
+//        arg.addNameDecl(
+//            noteSourcePosition(
+//                arg,
+//                Ast.makeNode(
+//                    CAstNode.DECL_STMT,
+//                    Ast.makeConstant(new CAstSymbolImpl(unwindName, JSAstTranslator.Any)),
+//                    readName(arg, null, "$$undefined")),
+//                node));
+//
+//        unwindCatch =
+//            Ast.makeNode(
+//                CAstNode.CATCH,
+//                var,
+//                Ast.makeNode(
+//                    CAstNode.ASSIGN,
+//                    Ast.makeNode(CAstNode.VAR, Ast.makeConstant(unwindName)),
+//                    Ast.makeNode(CAstNode.VAR, Ast.makeConstant(unwindCatchName))));
+//
+//        arg.cfg().map(unwindCatch, unwindCatch);
+//
+//        outer = new TryCatchContext(arg, unwindCatch);
+//      }
 
       if (catches != null && catches.size() > 0) {
         String catchVarName = catches.get(0).getVarName().getString();
@@ -1690,16 +1690,18 @@ public class RhinoToAstTranslator implements TranslatorToCAst {
                 visit(node.getTryBlock(), tryContext),
                 /*Ast.makeNode(CAstNode.LOCAL_SCOPE,*/ catchBlock /*)*/);
       } else {
-        tryCatch = visit(node.getTryBlock(), arg);
+        tryCatch = visit(node.getTryBlock(), outer);
       }
 
       if (node.getFinallyBlock() != null) {
         return Ast.makeNode(
             CAstNode.UNWIND,
-            Ast.makeNode(
-                CAstNode.BLOCK_STMT,
-                Ast.makeNode(CAstNode.TRY, tryCatch, unwindCatch),
-                Ast.makeNode(
+            tryCatch,
+            /*Ast.makeNode(CAstNode.TRY, tryCatch, unwindCatch),*/
+            /*Ast.makeNode(
+                CAstNode.BLOCK_STMT,*/
+                visit(node.getFinallyBlock(), arg)
+                /*Ast.makeNode(
                     CAstNode.IF_STMT,
                     Ast.makeNode(
                         CAstNode.BINARY_EXPR,
@@ -1707,8 +1709,8 @@ public class RhinoToAstTranslator implements TranslatorToCAst {
                         Ast.makeNode(CAstNode.VAR, Ast.makeConstant(unwindName)),
                         readName(arg, null, "$$undefined")),
                     Ast.makeNode(
-                        CAstNode.THROW, Ast.makeNode(CAstNode.VAR, Ast.makeConstant(unwindName))))),
-            visit(node.getFinallyBlock(), arg));
+                        CAstNode.THROW,
+                        Ast.makeNode(CAstNode.VAR, Ast.makeConstant(unwindName)))))*/);
       } else {
         return tryCatch;
       }

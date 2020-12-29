@@ -21,28 +21,28 @@ function oo2() {
 }
 
 function e(a) {
-    var c=1;
-    var o=1;
+//  var c=1;
+//  var o=1;
+  try {
     try {
-	    try {
-		var s=a.f();
-	    } finally {
-		try {
-		    a.one()
-		    o=0
-		} finally {
-		    if (o==1) oo1();
-		} 
-	    } 
+      var s=a.f();
     } finally {
-	try {
-	    a.two();
-	    c = 0 
-	} finally {
-	    if (c==1) oo2();
-	}
+//      try {
+        a.one()
+        //o=0
+//      } finally {
+//        //if (o==1) oo1();
+//      }
     }
-    return "done"
+  } finally {
+    try {
+      a.two();
+      //c = 0
+    } finally {
+      //if (c==1) oo2();
+    }
+  }
+  return "done"
 }
 
 e({f: base, two: good, one: bad})

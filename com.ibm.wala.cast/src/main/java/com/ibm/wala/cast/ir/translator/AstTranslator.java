@@ -842,15 +842,12 @@ public abstract class AstTranslator extends CAstVisitor<AstTranslator.WalkContex
        */
       public PreBasicBlock findOrCreateCode(
           PreBasicBlock source, PreBasicBlock target, final boolean exception) {
-        UnwindState sourceContext = unwindData.get(source);
-        final CAstNode dummy = exception ? (new CAstImpl()).makeNode(CAstNode.EMPTY) : null;
-
+        final UnwindState sourceContext = unwindData.get(source);
         // no unwinding is needed, so jump to target block directly
         if (sourceContext == null) return target;
 
-        WalkContext astContext = sourceContext.astContext;
-        UnwindState targetContext = null;
-        if (target != null) targetContext = unwindData.get(target);
+        final WalkContext sourceAstContext = sourceContext.astContext;
+        final UnwindState targetContext = target == null ? null : unwindData.get(target);
 
         // in unwind context, but catch in same (or inner) unwind context
         if (targetContext != null && targetContext.covers(sourceContext)) return target;
@@ -862,23 +859,28 @@ public abstract class AstTranslator extends CAstVisitor<AstTranslator.WalkContex
           return code.get(key);
 
         } else {
-          int e = -1;
-          PreBasicBlock currentBlock = getCurrentBlock();
-          if (!isDeadBlock(currentBlock)) {
+          // generate a copy of the finally block
+          int exceptionVarValNum = -1;
+          final CAstNode dummyExceptionTarget =
+              exception ? (new CAstImpl()).makeNode(CAstNode.EMPTY) : null;
+          PreBasicBlock blockBeforeFinallyCopy = getCurrentBlock();
+          if (!isDeadBlock(blockBeforeFinallyCopy)) {
             addInstruction(insts.GotoInstruction(currentInstruction, -1));
             newBlock(false);
           }
           PreBasicBlock startBlock = getCurrentBlock();
           if (exception) {
             setCurrentBlockAsHandler();
-            e = sourceContext.astContext.currentScope().allocateTempValue();
+            exceptionVarValNum = sourceAstContext.currentScope().allocateTempValue();
             addInstruction(
-                insts.GetCaughtExceptionInstruction(currentInstruction, startBlock.getNumber(), e));
-            sourceContext.astContext.setCatchType(startBlock, defaultCatchType());
+                insts.GetCaughtExceptionInstruction(currentInstruction, startBlock.getNumber(), exceptionVarValNum));
+            sourceAstContext.setCatchType(startBlock, defaultCatchType());
           }
 
-          while (sourceContext != null
-              && (targetContext == null || !targetContext.covers(sourceContext))) {
+          UnwindState curUnwindState = sourceContext;
+          while (curUnwindState != null
+              && (targetContext == null || !targetContext.covers(curUnwindState))) {
+            WalkContext curUnwindAstContext = curUnwindState.astContext;
             final CAstRewriter.Rewrite ast =
                 (new CAstCloner(new CAstImpl()) {
                       @Override
@@ -890,22 +892,22 @@ public abstract class AstTranslator extends CAstVisitor<AstTranslator.WalkContex
                           CAstControlFlowMap orig,
                           CAstSourcePositionMap src) {
                         if (exception && !isExceptionLabel(label)) {
-                          return dummy;
+                          return dummyExceptionTarget;
                         } else {
                           return oldTarget;
                         }
                       }
                     })
                     .copy(
-                        sourceContext.unwindAst,
-                        sourceContext.astContext.getControlFlow(),
-                        sourceContext.astContext.getSourceMap(),
-                        sourceContext.astContext.top().getNodeTypeMap(),
-                        sourceContext.astContext.top().getAllScopedEntities(),
-                        sourceContext.astContext.top().getArgumentDefaults());
-            sourceContext.astVisitor.visit(
+                        curUnwindState.unwindAst,
+                        curUnwindAstContext.getControlFlow(),
+                        curUnwindAstContext.getSourceMap(),
+                        curUnwindAstContext.top().getNodeTypeMap(),
+                        curUnwindAstContext.top().getAllScopedEntities(),
+                        curUnwindAstContext.top().getArgumentDefaults());
+            curUnwindState.astVisitor.visit(
                 ast.newRoot(),
-                new DelegatingContext(sourceContext.astContext) {
+                new DelegatingContext(curUnwindAstContext) {
                   @Override
                   public CAstSourcePositionMap getSourceMap() {
                     return ast.newPos();
@@ -916,23 +918,24 @@ public abstract class AstTranslator extends CAstVisitor<AstTranslator.WalkContex
                     return ast.newCfg();
                   }
                 },
-                sourceContext.astVisitor);
+                curUnwindState.astVisitor);
 
-            sourceContext = sourceContext.getParent();
+            curUnwindState = curUnwindState.getParent();
           }
 
           PreBasicBlock endBlock = getCurrentBlock();
           if (exception) {
+            // rethrow the exception
             assert unwindData.get(endBlock) == null;
-            addPreNode(dummy);
-            doThrow(astContext, e);
+            addPreNode(dummyExceptionTarget);
+            doThrow(sourceAstContext, exceptionVarValNum);
           } else {
             addInstruction(insts.GotoInstruction(currentInstruction, -1));
           }
           newBlock(false);
 
           if (target != null) {
-            addEdge(currentBlock, getCurrentBlock());
+            addEdge(blockBeforeFinallyCopy, getCurrentBlock());
             assert unwindData.get(getCurrentBlock()) == null;
             addEdge(endBlock, target);
             // assert unwindData.get(target) == null;
@@ -940,7 +943,7 @@ public abstract class AstTranslator extends CAstVisitor<AstTranslator.WalkContex
             // `null' target is idiom for branch/throw to exit
           } else {
             if (exception) {
-              addEdge(currentBlock, getCurrentBlock());
+              addEdge(blockBeforeFinallyCopy, getCurrentBlock());
             } else {
               addDelayedEdge(endBlock, exitMarker, exception);
             }
