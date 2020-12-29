@@ -873,7 +873,8 @@ public abstract class AstTranslator extends CAstVisitor<AstTranslator.WalkContex
             setCurrentBlockAsHandler();
             exceptionVarValNum = sourceAstContext.currentScope().allocateTempValue();
             addInstruction(
-                insts.GetCaughtExceptionInstruction(currentInstruction, startBlock.getNumber(), exceptionVarValNum));
+                insts.GetCaughtExceptionInstruction(
+                    currentInstruction, startBlock.getNumber(), exceptionVarValNum));
             sourceAstContext.setCatchType(startBlock, defaultCatchType());
           }
 
