@@ -21,4 +21,13 @@ public class Locals {
     Object b = a;
     System.out.println(b);
   }
+
+  public static void stringAndSwitch() {
+    String phoneModel = "aaaaa";
+    switch (phoneModel){
+      case "wwwww":
+        break;
+    }
+  }
+
 }

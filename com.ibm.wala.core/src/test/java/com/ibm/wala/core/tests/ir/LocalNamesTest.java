@@ -52,8 +52,6 @@ public class LocalNamesTest extends WalaTestCase {
 
   private static ClassHierarchy cha;
 
-  private static AnalysisOptions options;
-
   public static void main(String[] args) {
     justThisTest(LocalNamesTest.class);
   }
@@ -67,7 +65,6 @@ public class LocalNamesTest extends WalaTestCase {
             (new FileProvider()).getFile("J2SEClassHierarchyExclusions.txt"),
             MY_CLASSLOADER);
 
-    options = new AnalysisOptions(scope, null);
     ClassLoaderFactory factory = new ClassLoaderFactoryImpl(scope.getExclusions());
 
     try {
@@ -86,7 +83,6 @@ public class LocalNamesTest extends WalaTestCase {
   public static void afterClass() throws Exception {
     scope = null;
     cha = null;
-    options = null;
   }
 
   /** Build an IR, then check getLocalNames */
@@ -138,7 +134,7 @@ public class LocalNamesTest extends WalaTestCase {
 
   @Test
   public void testLocalNamesWithoutPiNodes() {
-    SSAPiNodePolicy save = options.getSSAOptions().getPiNodePolicy();
+    AnalysisOptions options = new AnalysisOptions();
     options.getSSAOptions().setPiNodePolicy(null);
     MethodReference mref =
         scope.findMethod(
@@ -151,7 +147,6 @@ public class LocalNamesTest extends WalaTestCase {
     Assert.assertNotNull("imethod not found", imethod);
     IAnalysisCacheView cache = new AnalysisCacheImpl(options.getSSAOptions());
     IR ir = cache.getIRFactory().makeIR(imethod, Everywhere.EVERYWHERE, options.getSSAOptions());
-    options.getSSAOptions().setPiNodePolicy(save);
 
     // v1 should be the parameter "a" at pc 0
     String[] names = ir.getLocalNames(0, 1);
@@ -173,8 +168,42 @@ public class LocalNamesTest extends WalaTestCase {
   }
 
   @Test
+  public void testLocalNamesStringSwitch() {
+    AnalysisOptions options = new AnalysisOptions();
+    MethodReference mref =
+        scope.findMethod(
+            AnalysisScope.APPLICATION,
+            "LcornerCases/Locals",
+            Atom.findOrCreateUnicodeAtom("stringAndSwitch"),
+            new ImmutableByteArray(UTF8Convert.toUTF8("()V")));
+    Assert.assertNotNull("method not found", mref);
+    IMethod imethod = cha.resolveMethod(mref);
+    Assert.assertNotNull("imethod not found", imethod);
+    IAnalysisCacheView cache = new AnalysisCacheImpl(options.getSSAOptions());
+    IR ir = cache.getIRFactory().makeIR(imethod, Everywhere.EVERYWHERE, options.getSSAOptions());
+    System.err.println(ir);
+    // v1 should be the parameter "a" at pc 0
+//    String[] names = ir.getLocalNames(0, 1);
+//    Assert.assertNotNull("failed local name resolution for v1@0", names);
+//    Assert.assertEquals(
+//        "incorrect number of local names for v1@0: " + names.length, 1, names.length);
+//    Assert.assertEquals("incorrect local name resolution for v1@0: " + names[0], "a", names[0]);
+//
+//    // v2 is a compiler-induced temporary
+//    Assert.assertNull("didn't expect name for v2 at pc 2", ir.getLocalNames(2, 2));
+//
+//    // at pc 5, v1 should represent the locals "a" and "b"
+//    names = ir.getLocalNames(5, 1);
+//    Assert.assertNotNull("failed local name resolution for v1@5", names);
+//    Assert.assertEquals(
+//        "incorrect number of local names for v1@5: " + names.length, 2, names.length);
+//    Assert.assertEquals("incorrect local name resolution #0 for v1@5: " + names[0], "a", names[0]);
+//    Assert.assertEquals("incorrect local name resolution #1 for v1@5: " + names[1], "b", names[1]);
+
+  }
+  @Test
   public void testLocalNamesWithPiNodes() {
-    SSAPiNodePolicy save = options.getSSAOptions().getPiNodePolicy();
+    AnalysisOptions options = new AnalysisOptions();
     options.getSSAOptions().setPiNodePolicy(SSAOptions.getAllBuiltInPiNodes());
     MethodReference mref =
         scope.findMethod(
@@ -187,7 +216,6 @@ public class LocalNamesTest extends WalaTestCase {
     Assert.assertNotNull("imethod not found", imethod);
     IAnalysisCacheView cache = new AnalysisCacheImpl(options.getSSAOptions());
     IR ir = cache.getIRFactory().makeIR(imethod, Everywhere.EVERYWHERE, options.getSSAOptions());
-    options.getSSAOptions().setPiNodePolicy(save);
 
     // v1 should be the parameter "a" at pc 0
     String[] names = ir.getLocalNames(0, 1);
