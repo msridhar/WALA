@@ -24,10 +24,9 @@ public class Locals {
 
   public static void stringAndSwitch() {
     String phoneModel = "aaaaa";
-    switch (phoneModel){
+    switch (phoneModel) {
       case "wwwww":
         break;
     }
   }
-
 }

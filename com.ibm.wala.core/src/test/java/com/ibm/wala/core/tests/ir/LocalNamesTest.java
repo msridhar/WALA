@@ -32,7 +32,6 @@ import com.ibm.wala.ipa.cha.ClassHierarchyFactory;
 import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.ssa.SSAOptions;
-import com.ibm.wala.ssa.SSAPiNodePolicy;
 import com.ibm.wala.types.Descriptor;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.Selector;
@@ -183,24 +182,28 @@ public class LocalNamesTest extends WalaTestCase {
     IR ir = cache.getIRFactory().makeIR(imethod, Everywhere.EVERYWHERE, options.getSSAOptions());
     System.err.println(ir);
     // v1 should be the parameter "a" at pc 0
-//    String[] names = ir.getLocalNames(0, 1);
-//    Assert.assertNotNull("failed local name resolution for v1@0", names);
-//    Assert.assertEquals(
-//        "incorrect number of local names for v1@0: " + names.length, 1, names.length);
-//    Assert.assertEquals("incorrect local name resolution for v1@0: " + names[0], "a", names[0]);
-//
-//    // v2 is a compiler-induced temporary
-//    Assert.assertNull("didn't expect name for v2 at pc 2", ir.getLocalNames(2, 2));
-//
-//    // at pc 5, v1 should represent the locals "a" and "b"
-//    names = ir.getLocalNames(5, 1);
-//    Assert.assertNotNull("failed local name resolution for v1@5", names);
-//    Assert.assertEquals(
-//        "incorrect number of local names for v1@5: " + names.length, 2, names.length);
-//    Assert.assertEquals("incorrect local name resolution #0 for v1@5: " + names[0], "a", names[0]);
-//    Assert.assertEquals("incorrect local name resolution #1 for v1@5: " + names[1], "b", names[1]);
+    //    String[] names = ir.getLocalNames(0, 1);
+    //    Assert.assertNotNull("failed local name resolution for v1@0", names);
+    //    Assert.assertEquals(
+    //        "incorrect number of local names for v1@0: " + names.length, 1, names.length);
+    //    Assert.assertEquals("incorrect local name resolution for v1@0: " + names[0], "a",
+    // names[0]);
+    //
+    //    // v2 is a compiler-induced temporary
+    //    Assert.assertNull("didn't expect name for v2 at pc 2", ir.getLocalNames(2, 2));
+    //
+    //    // at pc 5, v1 should represent the locals "a" and "b"
+    //    names = ir.getLocalNames(5, 1);
+    //    Assert.assertNotNull("failed local name resolution for v1@5", names);
+    //    Assert.assertEquals(
+    //        "incorrect number of local names for v1@5: " + names.length, 2, names.length);
+    //    Assert.assertEquals("incorrect local name resolution #0 for v1@5: " + names[0], "a",
+    // names[0]);
+    //    Assert.assertEquals("incorrect local name resolution #1 for v1@5: " + names[1], "b",
+    // names[1]);
 
   }
+
   @Test
   public void testLocalNamesWithPiNodes() {
     AnalysisOptions options = new AnalysisOptions();
