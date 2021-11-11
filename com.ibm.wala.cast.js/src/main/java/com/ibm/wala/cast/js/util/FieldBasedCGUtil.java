@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import com.ibm.wala.cast.js.html.WebUtil;
 
 /**
  * Utility class for building call graphs.
@@ -159,7 +160,9 @@ public class FieldBasedCGUtil {
     for (Path p : jsFiles) {
       scripts.add(new SourceURLModule(p.toUri().toURL()));
     }
+    JavaScriptLoader.addBootstrapFile(WebUtil.preamble);
     scripts.add(JSCallGraphUtil.getPrologueFile("prologue.js"));
+    scripts.add(JSCallGraphUtil.getPrologueFile("preamble.js"));
     return buildCG(
         loaders, scripts.toArray(new Module[0]), builderType, monitor, supportFullPointerAnalysis);
   }
