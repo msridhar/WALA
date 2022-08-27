@@ -853,4 +853,23 @@ public class ReflectionTest extends WalaTestCase {
     // getMessage() should _not_ be a callee with reflection handling enabled
     Assert.assertFalse(mainCallees.stream().anyMatch(n -> n.toString().contains("getMessage")));
   }
+
+  @Test
+  public void testHSQLDB() throws IOException, ClassHierarchyException, CancelException {
+    AnalysisScope scope =
+        CallGraphTestUtil.makeJ2SEAnalysisScope(
+            "hsqldb.txt", CallGraphTestUtil.REGRESSION_EXCLUSIONS);
+    IClassHierarchy cha = ClassHierarchyFactory.make(scope);
+    Iterable<Entrypoint> entrypoints =
+        com.ibm.wala.ipa.callgraph.impl.Util.makeMainEntrypoints(cha);
+    AnalysisOptions options = CallGraphTestUtil.makeAnalysisOptions(scope, entrypoints);
+    options.setReflectionOptions(ReflectionOptions.STRING_ONLY);
+    CallGraph cg = CallGraphTestUtil.buildZeroCFA(options, new AnalysisCacheImpl(), cha, false);
+    System.err.println(cg);
+    //    IMethod mainMethod = entrypoints.iterator().next().getMethod();
+    //    List<CGNode> mainCallees =
+    //        Iterator2List.toList(cg.getSuccNodes(cg.getNode(mainMethod, Everywhere.EVERYWHERE)));
+    //    Assert.assertTrue(mainCallees.stream().anyMatch(n ->
+    // n.toString().contains("getMessage")));
+  }
 }
