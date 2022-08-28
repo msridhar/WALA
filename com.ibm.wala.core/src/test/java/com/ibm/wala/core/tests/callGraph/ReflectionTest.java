@@ -10,6 +10,7 @@
  */
 package com.ibm.wala.core.tests.callGraph;
 
+import com.ibm.wala.classLoader.CallSiteReference;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.core.tests.util.TestConstants;
@@ -865,11 +866,16 @@ public class ReflectionTest extends WalaTestCase {
     AnalysisOptions options = CallGraphTestUtil.makeAnalysisOptions(scope, entrypoints);
     options.setReflectionOptions(ReflectionOptions.STRING_ONLY);
     CallGraph cg = CallGraphTestUtil.buildZeroCFA(options, new AnalysisCacheImpl(), cha, false);
-    System.err.println(cg);
-    //    IMethod mainMethod = entrypoints.iterator().next().getMethod();
-    //    List<CGNode> mainCallees =
-    //        Iterator2List.toList(cg.getSuccNodes(cg.getNode(mainMethod, Everywhere.EVERYWHERE)));
-    //    Assert.assertTrue(mainCallees.stream().anyMatch(n ->
-    // n.toString().contains("getMessage")));
+    // System.err.println(cg);
+    for (CGNode node : cg) {
+      if (!node.toString().contains("ScriptTool, execute")) continue;
+      System.err.println("CALLER: " + node);
+      for (CallSiteReference site : Iterator2Iterable.make(node.iterateCallSites())) {
+        System.err.println("SITE: " + site);
+        for (CGNode callee : cg.getPossibleTargets(node, site)) {
+          System.err.println("  CALLEE: " + callee);
+        }
+      }
+    }
   }
 }
