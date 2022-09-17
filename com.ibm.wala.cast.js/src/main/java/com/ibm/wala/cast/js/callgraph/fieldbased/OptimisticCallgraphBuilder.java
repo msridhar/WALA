@@ -93,7 +93,6 @@ public class OptimisticCallgraphBuilder extends FieldBasedCallGraphBuilder {
         }
       }
     }
-
     return flowgraph;
   }
 

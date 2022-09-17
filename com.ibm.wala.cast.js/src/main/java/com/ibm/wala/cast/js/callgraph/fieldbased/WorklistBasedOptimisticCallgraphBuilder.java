@@ -35,6 +35,27 @@ import com.ibm.wala.util.collections.Pair;
 import java.util.Map;
 import java.util.Set;
 
+import com.ibm.wala.cast.js.ipa.callgraph.JSCallGraph;
+import com.ibm.wala.classLoader.CallSiteReference;
+import com.ibm.wala.ipa.callgraph.CGNode;
+import com.ibm.wala.classLoader.IMethod;
+import com.ibm.wala.classLoader.IClass;
+import com.ibm.wala.cast.js.ipa.summaries.JavaScriptConstructorFunctions;
+import com.ibm.wala.cast.js.ipa.summaries.JavaScriptConstructorFunctions.JavaScriptConstructor;
+import com.ibm.wala.ipa.callgraph.impl.Everywhere;
+import com.ibm.wala.cast.js.ipa.callgraph.JavaScriptFunctionDotCallTargetSelector;
+import com.ibm.wala.cast.js.ipa.callgraph.JavaScriptFunctionApplyTargetSelector;
+import java.util.Iterator;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.io.File; 
+import java.io.FileWriter;
+import com.ibm.wala.cast.js.util.CallGraph2JSON;
+
 /**
  * Optimistic call graph builder that propagates inter-procedural data flow iteratively as call
  * edges are discovered. Slower, but potentially more sound than {@link
@@ -68,15 +89,16 @@ public class WorklistBasedOptimisticCallgraphBuilder extends FieldBasedCallGraph
     builder = new FlowGraphBuilder(cha, cache, false);
     return builder.buildFlowGraph();
   }
-
-  @Override
-  public Set<Pair<CallVertex, FuncVertex>> extractCallGraphEdges(
-      FlowGraph flowgraph, IProgressMonitor monitor) throws CancelException {
+  
+  public Set<Pair<CallVertex, FuncVertex>> extractCallGraphEdgesWL(
+      FlowGraph flowgraph, IProgressMonitor monitor, JSCallGraph cg, String destAddress) throws CancelException {
     VertexFactory factory = flowgraph.getVertexFactory();
     Set<Vertex> worklist = HashSetFactory.make();
     Map<Vertex, Set<FuncVertex>> reachingFunctions = HashMapFactory.make();
     Map<VarVertex, Pair<JavaScriptInvoke, Boolean>> reflectiveCalleeVertices =
         HashMapFactory.make();
+
+
 
     for (Vertex v : flowgraph) {
       if (v instanceof FuncVertex) {
@@ -85,7 +107,10 @@ public class WorklistBasedOptimisticCallgraphBuilder extends FieldBasedCallGraph
         MapUtil.findOrCreateSet(reachingFunctions, fv).add(fv);
       }
     }
-
+    int cnt =0;
+    System.out.println("Entering Iterative Loop");
+    //System.out.println(DestAddress.destAddress);
+    System.out.println(worklist.size());
     while (!worklist.isEmpty()) {
       MonitorUtil.throwExceptionIfCanceled(monitor);
 
@@ -141,8 +166,81 @@ public class WorklistBasedOptimisticCallgraphBuilder extends FieldBasedCallGraph
         }
         if (changed) worklist.add(w);
       }
-    }
+      cnt++;
+      /*if(cnt%3007 == 0){
+      //Madhurima_ACG
+      Set<Pair<CallVertex, FuncVertex>> res = HashSetFactory.make();
+      for (Map.Entry<Vertex, Set<FuncVertex>> entry : reachingFunctions.entrySet()) {
+        final Vertex vIter = entry.getKey();
+        if (vIter instanceof CallVertex)
+          for (FuncVertex fv : entry.getValue()) res.add(Pair.make((CallVertex) vIter, fv));
+      }
+      //JSCallGraph cg = extractInterCG(res, flowgraph, monitor);
+      for (Pair<CallVertex, FuncVertex> edge : res) { 
+      CallVertex callVertex = edge.fst;
+      FuncVertex targetVertex = edge.snd;
+      IClass kaller = callVertex.getCaller().getConcreteType();
+      CGNode caller =
+          cg.findOrCreateNode(
+              kaller.getMethod(AstMethodReference.fnSelector), Everywhere.EVERYWHERE);
+      CallSiteReference site = callVertex.getSite();
+      IMethod target = targetSelector.getCalleeTarget(caller, site, targetVertex.getConcreteType());
+      boolean isFunctionPrototypeCall =
+          target != null
+              && target
+                  .getName()
+                  .toString()
+                  .startsWith(JavaScriptFunctionDotCallTargetSelector.SYNTHETIC_CALL_METHOD_PREFIX);
+      boolean isFunctionPrototypeApply =
+          target != null
+              && target
+                  .getName()
+                  .toString()
+                  .startsWith(JavaScriptFunctionApplyTargetSelector.SYNTHETIC_APPLY_METHOD_PREFIX);
 
+      if (isFunctionPrototypeCall || isFunctionPrototypeApply) {
+        handleFunctionCallOrApplyInvocation(
+            flowgraph, monitor, cg, callVertex, caller, site, target);
+      } else {
+        addEdgeToJSCallGraph(cg, site, target, caller);
+
+        if (target instanceof JavaScriptConstructor) {
+          IMethod fun =
+              ((JavaScriptConstructor) target)
+                  .constructedType()
+                  .getMethod(AstMethodReference.fnSelector);
+          CGNode ctorCaller = cg.findOrCreateNode(target, Everywhere.EVERYWHERE);
+
+          CallSiteReference ref = null;
+          Iterator<CallSiteReference> sites = ctorCaller.iterateCallSites();
+          while (sites.hasNext()) {
+            CallSiteReference r = sites.next();
+            if (r.getDeclaredTarget().getSelector().equals(AstMethodReference.fnSelector)) {
+              ref = r;
+              break;
+            }
+          }
+
+          if (ref != null) {
+            addEdgeToJSCallGraph(cg, ref, fun, ctorCaller);
+          }
+        }
+      }
+    }
+    File file1 = new File(destAddress+"SCG"+cnt+".json");
+    try {  
+      FileWriter myWriter1 = new FileWriter(file1);
+      myWriter1.write((new CallGraph2JSON(false,true)).serialize(cg));
+      myWriter1.close();
+      System.out.println("Successfully wrote to Call Graph "+ file1);
+    } catch (IOException e) {
+      System.out.println("An error occurred while writing Call Graph.");
+      e.printStackTrace();
+    }
+    //Madhurima_ACG
+    }*/
+    }
+    System.out.println("Total Iterations : "+ cnt);
     Set<Pair<CallVertex, FuncVertex>> res = HashSetFactory.make();
     for (Map.Entry<Vertex, Set<FuncVertex>> entry : reachingFunctions.entrySet()) {
       final Vertex v = entry.getKey();

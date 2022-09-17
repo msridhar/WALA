@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import com.ibm.wala.cast.js.html.WebUtil;
 
 /**
  * Utility class for building call graphs.
@@ -146,7 +147,8 @@ public class FieldBasedCGUtil {
       Path scriptDir,
       BuilderType builderType,
       IProgressMonitor monitor,
-      boolean supportFullPointerAnalysis)
+      boolean supportFullPointerAnalysis,
+      String destAddress)
       throws WalaException, CancelException, IOException {
     JavaScriptLoaderFactory loaders = new JavaScriptLoaderFactory(translatorFactory);
     List<Path> jsFiles =
@@ -159,9 +161,13 @@ public class FieldBasedCGUtil {
     for (Path p : jsFiles) {
       scripts.add(new SourceURLModule(p.toUri().toURL()));
     }
+    JavaScriptLoader.addBootstrapFile(WebUtil.preamble);
     scripts.add(JSCallGraphUtil.getPrologueFile("prologue.js"));
-    return buildCG(
-        loaders, scripts.toArray(new Module[0]), builderType, monitor, supportFullPointerAnalysis);
+    scripts.add(JSCallGraphUtil.getPrologueFile("preamble.js"));
+    System.out.println("Starting out here");
+    //System.out.println(destAddress);
+    return buildCGWL(
+        loaders, scripts.toArray(new Module[0]), builderType, monitor, supportFullPointerAnalysis,destAddress);
   }
 
   public CallGraphResult buildTestCG(
@@ -204,7 +210,29 @@ public class FieldBasedCGUtil {
     final FieldBasedCallGraphBuilder builder =
         builderType.fieldBasedCallGraphBuilderFactory(
             cha, JSCallGraphUtil.makeOptions(scope, cha, roots), cache, supportFullPointerAnalysis);
+    System.out.println("Building Call Graph with entrypoint info");
     return builder.buildCallGraph(roots, monitor);
+  }
+
+  public CallGraphResult buildCGWL(
+      JavaScriptLoaderFactory loaders,
+      Module[] scripts,
+      BuilderType builderType,
+      IProgressMonitor monitor,
+      boolean supportFullPointerAnalysis,
+      String destAddress)
+      throws WalaException, CancelException {
+    CAstAnalysisScope scope =
+        new CAstAnalysisScope(scripts, loaders, Collections.singleton(JavaScriptLoader.JS));
+    IClassHierarchy cha = ClassHierarchyFactory.make(scope, loaders, JavaScriptLoader.JS);
+    com.ibm.wala.cast.util.Util.checkForFrontEndErrors(cha);
+    Iterable<Entrypoint> roots = JSCallGraphUtil.makeScriptRoots(cha);
+    IAnalysisCacheView cache = new AnalysisCacheImpl(AstIRFactory.makeDefaultFactory());
+    final FieldBasedCallGraphBuilder builder =
+        builderType.fieldBasedCallGraphBuilderFactory(
+            cha, JSCallGraphUtil.makeOptions(scope, cha, roots), cache, supportFullPointerAnalysis);
+    System.out.println("Building Call Graph with entrypoint info");
+    return builder.buildCallGraphWL(roots, monitor,destAddress);
   }
 
   /*
