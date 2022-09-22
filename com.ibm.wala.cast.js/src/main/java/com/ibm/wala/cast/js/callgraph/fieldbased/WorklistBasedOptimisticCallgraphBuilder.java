@@ -74,6 +74,7 @@ public class WorklistBasedOptimisticCallgraphBuilder extends FieldBasedCallGraph
       FlowGraph flowgraph, IProgressMonitor monitor) throws CancelException {
     VertexFactory factory = flowgraph.getVertexFactory();
     Set<Vertex> worklist = HashSetFactory.make();
+    Set<Vertex> newWorkList = HashSetFactory.make();
     Map<Vertex, Set<FuncVertex>> reachingFunctions = HashMapFactory.make();
     Map<VarVertex, Pair<JavaScriptInvoke, Boolean>> reflectiveCalleeVertices =
         HashMapFactory.make();
@@ -86,7 +87,10 @@ public class WorklistBasedOptimisticCallgraphBuilder extends FieldBasedCallGraph
       }
     }
 
-    while (!worklist.isEmpty()) {
+    int bound = 2;
+    int cnt=0;
+ 
+    while (!worklist.isEmpty() && cnt<bound) {
       MonitorUtil.throwExceptionIfCanceled(monitor);
 
       Vertex v = worklist.iterator().next();
@@ -102,7 +106,7 @@ public class WorklistBasedOptimisticCallgraphBuilder extends FieldBasedCallGraph
             if (wReach.add(fv)) {
               changed = true;
               CallVertex callVertex = (CallVertex) w;
-              addCallEdge(flowgraph, callVertex, fv, worklist);
+              addCallEdge(flowgraph, callVertex, fv, newWorkList);
 
               // special handling of invocations of Function.prototype.call
               String fullName = fv.getFullName();
@@ -141,8 +145,23 @@ public class WorklistBasedOptimisticCallgraphBuilder extends FieldBasedCallGraph
         }
         if (changed) worklist.add(w);
       }
+      if (worklist.isEmpty()){
+        worklist = newWorkList;
+        newWorkList = HashSetFactory.make();
+        cnt+=1;
+      }
     }
-
+    /*int i = 0;
+    int bound = 1;
+    Set<Vertex> nextWorklist = HashSetFactory.make();
+    while (i < bound && !worklist.isEmpty()) {
+      processSFGConstraints();
+      addSFGConstraintsForNewCallTargets();
+      i++;
+      if (worklist.isEmpty()){
+        worklist = nextWorklist
+      }
+    }*/
     Set<Pair<CallVertex, FuncVertex>> res = HashSetFactory.make();
     for (Map.Entry<Vertex, Set<FuncVertex>> entry : reachingFunctions.entrySet()) {
       final Vertex v = entry.getKey();
@@ -151,7 +170,12 @@ public class WorklistBasedOptimisticCallgraphBuilder extends FieldBasedCallGraph
     }
     return res;
   }
+  /*private void processSFGConstraints(){
 
+  }
+  private void addSFGConstraintsForNewCallTargets(){
+    
+  }*/
   // add flow corresponding to a new call edge
   private void addCallEdge(
       FlowGraph flowgraph, CallVertex c, FuncVertex callee, Set<Vertex> worklist) {
