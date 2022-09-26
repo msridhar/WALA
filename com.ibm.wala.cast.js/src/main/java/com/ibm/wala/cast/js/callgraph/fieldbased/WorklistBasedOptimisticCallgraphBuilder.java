@@ -74,10 +74,11 @@ public class WorklistBasedOptimisticCallgraphBuilder extends FieldBasedCallGraph
       FlowGraph flowgraph, IProgressMonitor monitor) throws CancelException {
     VertexFactory factory = flowgraph.getVertexFactory();
     Set<Vertex> worklist = HashSetFactory.make();
-    Set<Vertex> newWorkList = HashSetFactory.make();
+
     Map<Vertex, Set<FuncVertex>> reachingFunctions = HashMapFactory.make();
     Map<VarVertex, Pair<JavaScriptInvoke, Boolean>> reflectiveCalleeVertices =
         HashMapFactory.make();
+    Map<Vertex, Set<FuncVertex>> pendingCallWorklist = HashMapFactory.make();
 
     for (Vertex v : flowgraph) {
       if (v instanceof FuncVertex) {
@@ -106,7 +107,10 @@ public class WorklistBasedOptimisticCallgraphBuilder extends FieldBasedCallGraph
             if (wReach.add(fv)) {
               changed = true;
               CallVertex callVertex = (CallVertex) w;
-              addCallEdge(flowgraph, callVertex, fv, newWorkList);
+              //addCallEdge(flowgraph, callVertex, fv, newWorkList);
+              //pendingCallWorklist.put(callVertex,fv);
+              MapUtil.findOrCreateSet(pendingCallWorklist, callVertex).add(fv);
+
 
               // special handling of invocations of Function.prototype.call
               String fullName = fv.getFullName();
@@ -146,8 +150,8 @@ public class WorklistBasedOptimisticCallgraphBuilder extends FieldBasedCallGraph
         if (changed) worklist.add(w);
       }
       if (worklist.isEmpty()){
-        worklist = newWorkList;
-        newWorkList = HashSetFactory.make();
+        worklist = processPendingCallWorklist(flowgraph, pendingCallWorklist);
+        pendingCallWorklist = HashMapFactory.make();
         cnt+=1;
       }
     }
@@ -176,6 +180,15 @@ public class WorklistBasedOptimisticCallgraphBuilder extends FieldBasedCallGraph
   private void addSFGConstraintsForNewCallTargets(){
     
   }*/
+  public Set<Vertex> processPendingCallWorklist(FlowGraph flowgraph, Map<Vertex, Set<FuncVertex>> pendingCallWorklist){
+    Set<Vertex> newWorkList = HashSetFactory.make();
+    for (Map.Entry<Vertex, Set<FuncVertex>> entry : pendingCallWorklist.entrySet()) {
+      final Vertex v = entry.getKey();
+      CallVertex callVertex = (CallVertex) v;
+      for (FuncVertex fv : entry.getValue()) addCallEdge(flowgraph, callVertex, fv, newWorkList);
+    }
+    return newWorkList;
+  }
   // add flow corresponding to a new call edge
   private void addCallEdge(
       FlowGraph flowgraph, CallVertex c, FuncVertex callee, Set<Vertex> worklist) {
