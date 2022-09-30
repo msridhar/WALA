@@ -162,7 +162,7 @@ public class FieldBasedCGUtil {
     }
     JavaScriptLoader.addBootstrapFile(WebUtil.preamble);
     scripts.add(JSCallGraphUtil.getPrologueFile("prologue.js"));
-    //scripts.add(JSCallGraphUtil.getPrologueFile("preamble.js"));
+    scripts.add(JSCallGraphUtil.getPrologueFile("preamble.js"));
     return buildCG(
         loaders, scripts.toArray(new Module[0]), builderType, monitor, supportFullPointerAnalysis);
   }
