@@ -1101,4 +1101,12 @@ public abstract class TestSimpleCallGraphShape extends TestJSCallGraphShape {
     CAstCallGraphUtil.dumpCG(B.getCFAContextInterpreter(), B.getPointerAnalysis(), CG);
     CAstCallGraphUtil.AVOID_DUMP = save;
   }
+
+  @Test
+  public void stringReplace()
+      throws IOException, IllegalArgumentException, CancelException, WalaException {
+    CallGraph CG = JSCallGraphBuilderUtil.makeScriptCG("tests", "string_replace.js");
+    System.err.println(CG);
+    //verifyGraphAssertions(CG, assertionsForArgs);
+  }
 }
