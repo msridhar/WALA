@@ -57,6 +57,27 @@ public class TestCallGraph2JSON {
   }
 
   @Test
+  public void testNestedNamed() throws WalaException, CancelException {
+    String script = "tests/fieldbased/nested_named_func.js";
+    CallGraph cg = buildCallGraph(script);
+    CallGraph2JSON cg2JSON = new CallGraph2JSON(false);
+    Map<String, Map<String, String[]>> unused = getParsedJSONCG(cg, cg2JSON);
+    //    Set<String> methods = parsedJSONCG.keySet();
+    //    assertEquals(3, methods.size());
+    //    for (Entry<String, Map<String, String[]>> entry : parsedJSONCG.entrySet()) {
+    //      if (entry.getKey().startsWith("simple.js@3")) {
+    //        Map<String, String[]> callSites = entry.getValue();
+    //        assertThat(
+    //            Arrays.asList(getTargetsStartingWith(callSites, "simple.js@4")),
+    //            hasItemStartingWith("simple.js@7"));
+    //      }
+    //    }
+    //    Map<String, String[]> flattened = flattenParsedCG(parsedJSONCG);
+    //    assertEquals(5, flattened.keySet().size());
+    //    flattened.values().stream().forEach(callees -> assertEquals(1, callees.length));
+  }
+
+  @Test
   public void testNative() throws WalaException, CancelException {
     String script = "tests/fieldbased/native_call.js";
     CallGraph cg = buildCallGraph(script);
@@ -125,7 +146,7 @@ public class TestCallGraph2JSON {
   private static Map<String, Map<String, String[]>> getParsedJSONCG(
       CallGraph cg, CallGraph2JSON cg2JSON) {
     String json = cg2JSON.serialize(cg);
-    // System.err.println(json);
+    System.err.println(json);
     Gson gson = new Gson();
     Type mapType = new TypeToken<Map<String, Map<String, String[]>>>() {}.getType();
     return gson.fromJson(json, mapType);

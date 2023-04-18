@@ -83,6 +83,14 @@ public class TestFieldBasedCG extends AbstractFieldBasedTest {
         "tests/fieldbased/callbacks.js", assertionsForCallbacks, BuilderType.OPTIMISTIC_WORKLIST);
   }
 
+  @Test
+  public void testNestedNamedWorklist() throws WalaException, Error, CancelException {
+    runTest(
+        "tests/fieldbased/nested_named_func.js",
+        new Object[][] {},
+        BuilderType.OPTIMISTIC_WORKLIST);
+  }
+
   private static final Object[][] assertionsForLexical =
       new Object[][] {new Object[] {"suffix:h", new String[] {"suffix:g"}}};
 

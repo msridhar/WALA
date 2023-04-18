@@ -15,6 +15,7 @@ import com.google.gson.GsonBuilder;
 import com.ibm.wala.cast.js.loader.JavaScriptLoader;
 import com.ibm.wala.cast.js.types.JavaScriptMethods;
 import com.ibm.wala.cast.loader.AstMethod;
+import com.ibm.wala.cast.loader.CAstAbstractModuleLoader;
 import com.ibm.wala.cast.types.AstMethodReference;
 import com.ibm.wala.classLoader.CallSiteReference;
 import com.ibm.wala.classLoader.IMethod;
@@ -132,6 +133,8 @@ public class CallGraph2JSON {
     if (isHarnessMethod(method) || isFunctionPrototypeCallOrApply(method)) {
       // just use the method name; position is meaningless
       result = getNativeMethodName(method);
+    } else if (isNativeConstructor(method)) {
+      result = getNativeConstructorName(method);
     } else {
       AstMethod astMethod = (AstMethod) method;
       result = astMethod.getSourcePosition().prettyPrint();
@@ -140,6 +143,11 @@ public class CallGraph2JSON {
       result += getContextString(context);
     }
     return result;
+  }
+
+  private String getNativeConstructorName(IMethod method) {
+    String typeName = method.getDeclaringClass().getName().toString();
+    return typeName.substring(1) + " constructor (Native)";
   }
 
   private String getContextString(Context context) {
@@ -177,8 +185,12 @@ public class CallGraph2JSON {
 
   private static IMethod getCallTargetMethod(IMethod method) {
     if (method.getName().equals(JavaScriptMethods.ctorAtom)) {
-      method = method.getDeclaringClass().getMethod(AstMethodReference.fnSelector);
-      if (method != null) return method;
+      // For constructors, we want the target method to be the "normal" IMethod corresponding to
+      // the function, since that IMethod has a proper source location.  There may be no such
+      // "normal" IMethod for certain native constructors
+      IMethod nonConstructorMethod =
+          method.getDeclaringClass().getMethod(AstMethodReference.fnSelector);
+      if (nonConstructorMethod != null) return nonConstructorMethod;
     }
     return method;
   }
@@ -195,6 +207,16 @@ public class CallGraph2JSON {
       if (isFunctionPrototypeCallOrApply(method)) {
         return true;
       }
+      if (isNativeConstructor(method)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static boolean isNativeConstructor(IMethod method) {
+    if (method.getName().equals(JavaScriptMethods.ctorAtom)) {
+      return method.getDeclaringClass() instanceof CAstAbstractModuleLoader.CoreClass;
     }
     return false;
   }
