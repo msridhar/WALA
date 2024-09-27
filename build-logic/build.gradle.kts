@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
   implementation(libs.gradle.download.task)
+  implementation(libs.gradle.checkerframework.plugin)
   implementation(libs.gradle.errorprone.plugin)
   implementation(libs.gradle.goomph.plugin)
   implementation(libs.gradle.maven.publish.plugin)
