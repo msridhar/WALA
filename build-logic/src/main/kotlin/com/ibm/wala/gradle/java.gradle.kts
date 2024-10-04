@@ -15,7 +15,6 @@ plugins {
   id("com.ibm.wala.gradle.javadoc")
   id("com.ibm.wala.gradle.subproject")
   id("net.ltgt.errorprone")
-  id("org.checkerframework")
 }
 
 repositories {

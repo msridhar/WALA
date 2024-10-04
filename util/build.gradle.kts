@@ -1,6 +1,9 @@
+import org.checkerframework.gradle.plugin.CheckerFrameworkExtension
+
 plugins {
   id("com.ibm.wala.gradle.java")
   id("com.ibm.wala.gradle.NullAway")
+  id("org.checkerframework")
   id("com.ibm.wala.gradle.publishing")
 }
 
@@ -21,4 +24,8 @@ tasks.named<Javadoc>("javadoc") {
         "https://docs.oracle.com/${linksPrefix}javase/${currentJavaVersion.majorVersion}/docs/api/")
     source = "8" // workaround https://bugs.openjdk.java.net/browse/JDK-8212233.
   }
+}
+
+configure<CheckerFrameworkExtension> {
+  checkers = listOf("org.checkerframework.checker.resourceleak.ResourceLeakChecker")
 }
