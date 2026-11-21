@@ -40,6 +40,24 @@ class SparseNumberedLabeledEdgeManagerTest {
   }
 
   @Test
+  void destinationQueryReturnsSource() {
+    SparseNumberedLabeledEdgeManager<String, String> edges =
+        new SparseNumberedLabeledEdgeManager<>(makeNodeManager());
+    edges.addEdge("src", "dst", "label");
+
+    assertThat(edges.getPredNodes("dst")).toIterable().containsExactly("src");
+  }
+
+  @Test
+  void sourceQueryReturnsDestination() {
+    SparseNumberedLabeledEdgeManager<String, String> edges =
+        new SparseNumberedLabeledEdgeManager<>(makeNodeManager());
+    edges.addEdge("src", "dst", "label");
+
+    assertThat(edges.getSuccNodes("src")).toIterable().containsExactly("dst");
+  }
+
+  @Test
   void nullNodeQueriesReturnNoNeighbors() {
     SparseNumberedLabeledEdgeManager<String, String> edges =
         new SparseNumberedLabeledEdgeManager<>(makeNodeManager());
