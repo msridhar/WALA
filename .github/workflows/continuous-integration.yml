@@ -65,6 +65,7 @@ jobs:
           ${XVFB_RUN}
           ./gradlew
           --scan
+          ${{ runner.os == 'macOS' && '--max-workers=2' || '' }}
           --console=colored "-Pcom.ibm.wala.jdk-version=${{ matrix.java }}"
           aggregatedJavadocs javadoc build ${OS_SPECIFIC_GRADLE_TASKS} checkGitCleanliness
       - name: Upload test results
